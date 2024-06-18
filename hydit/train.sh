@@ -11,7 +11,7 @@ ckpt_every=10000                                             # create a ckpt eve
 ckpt_latest_every=5000                                       # create a ckpt named `latest.pt` every a few steps.
 
 
-sh $(dirname "$0")/run_g.sh \
+sh "$(dirname "$0")"/run_g.sh \
     --task-flag ${task_flag} \
     --noise-schedule scaled_linear --beta-start 0.00085 --beta-end 0.03 \
     --predict-type v_prediction \
