@@ -1,8 +1,8 @@
-name: HunyuanDiT
+name: hydit
 channels:
   - pytorch
   - nvidia
 dependencies:
-  - python=3.8.12
-  - pytorch=1.13.1
+  - python=3.10
   - pip
+  - pytorch
