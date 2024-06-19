@@ -267,4 +267,4 @@ if __name__ == '__main__':
         clear_btn.click(reset, [], [gr_state, chatbot])
 
     interface = demo
-    interface.launch(server_name="0.0.0.0", server_port=443, share=False)
+    interface.launch(server_name="0.0.0.0", server_port=6666, share=False)
