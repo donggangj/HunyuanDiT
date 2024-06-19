@@ -9,7 +9,7 @@ from hydit.inference import End2End
 
 def inferencer():
     args = get_args()
-    models_root_path = Path(args.model_root)
+    models_root_path = Path(args.model_root).resolve()
     if not models_root_path.exists():
         raise ValueError(f"`models_root` not exists: {models_root_path}")
 
