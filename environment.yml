@@ -10,3 +10,4 @@ dependencies:
   - ninja
   - pip:
       - packaging
+      - numpy<2
