@@ -11,3 +11,10 @@ dependencies:
   - pip:
       - packaging
       - numpy<2
+      - black
+      - isort
+      - pre-commit
+      - flake8
+      - flake8-bugbear==24.2.6
+      - flake8-comprehensions
+      - flake8-simplify
