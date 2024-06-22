@@ -138,3 +138,5 @@ trt/deactivate.sh
 *.onnx
 ckpts/
 dataset/
+log*
+data/
