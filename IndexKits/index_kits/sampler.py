@@ -5,8 +5,9 @@ from torch.utils.data.distributed import DistributedSampler
 
 
 class BlockDistributedSampler(DistributedSampler):
-    def __init__(self, dataset, num_replicas=None, rank=None, shuffle=True, seed=0, drop_last=False,
-                 batch_size=-1, start_index=0):
+    def __init__(
+        self, dataset, num_replicas=None, rank=None, shuffle=True, seed=0, drop_last=False, batch_size=-1, start_index=0
+    ):
         super().__init__(dataset, num_replicas, rank, shuffle, seed, drop_last)
         if num_replicas is None:
             if not dist.is_available():
@@ -18,8 +19,8 @@ class BlockDistributedSampler(DistributedSampler):
             rank = dist.get_rank()
         if rank >= num_replicas or rank < 0:
             raise ValueError(
-                "Invalid rank {}, rank should be in the interval"
-                " [0, {}]".format(rank, num_replicas - 1))
+                "Invalid rank {}, rank should be in the interval" " [0, {}]".format(rank, num_replicas - 1)
+            )
         if batch_size == -1:
             raise ValueError("batch_size should be specified")
         self.dataset = dataset
@@ -43,8 +44,9 @@ class BlockDistributedSampler(DistributedSampler):
         self.recompute_sizes()
 
     def recompute_sizes(self):
-        self.num_samples = len(self.dataset) // self.batch_size * self.batch_size // self.num_replicas \
-                           - self._start_index
+        self.num_samples = (
+            len(self.dataset) // self.batch_size * self.batch_size // self.num_replicas - self._start_index
+        )
         self.total_size = self.num_samples * self.num_replicas
 
     def __iter__(self):
@@ -59,17 +61,17 @@ class BlockDistributedSampler(DistributedSampler):
         assert len(indices) == raw_total_size, f"{len(indices)} vs {raw_total_size}"
 
         # subsample with start_index
-        indices = indices[self.rank * raw_num_samples + self.start_index:(self.rank + 1) * raw_num_samples]
-        assert len(indices) + self.start_index == raw_num_samples, \
-            f"{len(indices) + self.start_index} vs {raw_num_samples}"
+        indices = indices[self.rank * raw_num_samples + self.start_index : (self.rank + 1) * raw_num_samples]
+        assert (
+            len(indices) + self.start_index == raw_num_samples
+        ), f"{len(indices) + self.start_index} vs {raw_num_samples}"
 
         # This is a sequential sampler. The shuffle operation is done by the dataset itself.
         return iter(indices)
 
 
 class DistributedSamplerWithStartIndex(DistributedSampler):
-    def __init__(self, dataset, num_replicas=None, rank=None, shuffle=True, seed=0, drop_last=False,
-                 start_index=0):
+    def __init__(self, dataset, num_replicas=None, rank=None, shuffle=True, seed=0, drop_last=False, start_index=0):
         super().__init__(dataset, num_replicas, rank, shuffle, seed, drop_last)
         if num_replicas is None:
             if not dist.is_available():
@@ -81,8 +83,8 @@ class DistributedSamplerWithStartIndex(DistributedSampler):
             rank = dist.get_rank()
         if rank >= num_replicas or rank < 0:
             raise ValueError(
-                "Invalid rank {}, rank should be in the interval"
-                " [0, {}]".format(rank, num_replicas - 1))
+                "Invalid rank {}, rank should be in the interval" " [0, {}]".format(rank, num_replicas - 1)
+            )
         self.dataset = dataset
         self.num_replicas = num_replicas
         self.rank = rank
@@ -105,19 +107,24 @@ class DistributedSamplerWithStartIndex(DistributedSampler):
     def recompute_sizes(self):
         # If the dataset length is evenly divisible by # of replicas, then there
         # is no need to drop any data, since the dataset will be split equally.
-        if self.drop_last and (len(self.dataset) - self._start_index) % self.num_replicas != 0:  # type: ignore[arg-type]
+        # type: ignore[arg-type]
+        if self.drop_last and (len(self.dataset) - self._start_index) % self.num_replicas != 0:
             # Split to nearest available length that is evenly divisible.
             # This is to ensure each rank receives the same amount of data when
             # using this Sampler.
             self.num_samples = math.ceil(
-                ((len(self.dataset) - self._start_index) - self.num_replicas) / self.num_replicas  # type: ignore[arg-type]
+                # type: ignore[arg-type]
+                ((len(self.dataset) - self._start_index) - self.num_replicas)
+                / self.num_replicas
             )
         else:
-            self.num_samples = math.ceil((len(self.dataset) - self._start_index) / self.num_replicas)  # type: ignore[arg-type]
+            # type: ignore[arg-type]
+            self.num_samples = math.ceil((len(self.dataset) - self._start_index) / self.num_replicas)
         self.total_size = self.num_samples * self.num_replicas
 
     def __iter__(self):
-        indices = list(range(self._start_index, len(self.dataset)))  # type: ignore[arg-type]
+        # type: ignore[arg-type]
+        indices = list(range(self._start_index, len(self.dataset)))
 
         if not self.drop_last:
             # add extra samples to make it evenly divisible
@@ -128,11 +135,11 @@ class DistributedSamplerWithStartIndex(DistributedSampler):
                 indices += (indices * math.ceil(padding_size / len(indices)))[:padding_size]
         else:
             # remove tail of data to make it evenly divisible.
-            indices = indices[:self.total_size]
+            indices = indices[: self.total_size]
         assert len(indices) == self.total_size
 
         # subsample with start_index
-        indices = indices[self.rank:self.total_size:self.num_replicas]
+        indices = indices[self.rank : self.total_size : self.num_replicas]
         assert len(indices) == self.num_samples
 
         return iter(indices)

@@ -9,11 +9,11 @@ def create_diffusion(
     sigma_small=False,
     noise_schedule="linear",
     use_kl=False,
-    predict_type='epsilon',
+    predict_type="epsilon",
     rescale_timesteps=False,
     rescale_learned_sigmas=False,
     timestep_respacing="",
-    mse_loss_weight_type='constant',
+    mse_loss_weight_type="constant",
     beta_start=0.0001,
     beta_end=0.02,
     noise_offset=0.0,
@@ -34,11 +34,7 @@ def create_diffusion(
         betas=betas,
         model_mean_type=mean_type,
         model_var_type=(
-            (
-                gd.ModelVarType.FIXED_LARGE
-                if not sigma_small
-                else gd.ModelVarType.FIXED_SMALL
-            )
+            (gd.ModelVarType.FIXED_LARGE if not sigma_small else gd.ModelVarType.FIXED_SMALL)
             if not learn_sigma
             else gd.ModelVarType.LEARNED_RANGE
         ),

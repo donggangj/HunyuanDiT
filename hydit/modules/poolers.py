@@ -6,7 +6,7 @@ import torch.nn.functional as F
 class AttentionPool(nn.Module):
     def __init__(self, spacial_dim: int, embed_dim: int, num_heads: int, output_dim: int = None):
         super().__init__()
-        self.positional_embedding = nn.Parameter(torch.randn(spacial_dim + 1, embed_dim) / embed_dim ** 0.5)
+        self.positional_embedding = nn.Parameter(torch.randn(spacial_dim + 1, embed_dim) / embed_dim**0.5)
         self.k_proj = nn.Linear(embed_dim, embed_dim)
         self.q_proj = nn.Linear(embed_dim, embed_dim)
         self.v_proj = nn.Linear(embed_dim, embed_dim)
@@ -18,7 +18,9 @@ class AttentionPool(nn.Module):
         x = torch.cat([x.mean(dim=0, keepdim=True), x], dim=0)  # (L+1)NC
         x = x + self.positional_embedding[:, None, :].to(x.dtype)  # (L+1)NC
         x, _ = F.multi_head_attention_forward(
-            query=x[:1], key=x, value=x,
+            query=x[:1],
+            key=x,
+            value=x,
             embed_dim_to_check=x.shape[-1],
             num_heads=self.num_heads,
             q_proj_weight=self.q_proj.weight,
@@ -34,6 +36,6 @@ class AttentionPool(nn.Module):
             out_proj_bias=self.c_proj.bias,
             use_separate_proj_weight=True,
             training=self.training,
-            need_weights=False
+            need_weights=False,
         )
         return x.squeeze(0)

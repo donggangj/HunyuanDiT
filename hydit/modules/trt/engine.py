@@ -16,6 +16,7 @@
 # limitations under the License.
 #
 
+import ctypes
 import os
 from collections import OrderedDict
 from copy import copy
@@ -23,27 +24,31 @@ from copy import copy
 import numpy as np
 import tensorrt as trt
 import torch
+from cuda import cudart
 from polygraphy import cuda
 from polygraphy.backend.common import bytes_from_path
-from polygraphy.backend.trt import CreateConfig, Profile
-from polygraphy.backend.trt import engine_from_bytes, engine_from_network, network_from_onnx_path, save_engine
+from polygraphy.backend.trt import (
+    CreateConfig,
+    Profile,
+    engine_from_bytes,
+    engine_from_network,
+    network_from_onnx_path,
+    save_engine,
+)
 from polygraphy.backend.trt import util as trt_util
-import ctypes
-from glob import glob
-from cuda import cudart
 
 TRT_LOGGER = trt.Logger(trt.Logger.INFO)
 trt_util.TRT_LOGGER = TRT_LOGGER
 
 
-class Engine():
+class Engine:
     def __init__(
-            self,
-            model_name,
-            engine_dir,
-            onnx_file=None,
+        self,
+        model_name,
+        engine_dir,
+        onnx_file=None,
     ):
-        self.engine_path = os.path.join(engine_dir, model_name + '.plan')
+        self.engine_path = os.path.join(engine_dir, model_name + ".plan")
         self.engine = None
         self.context = None
         self.buffers = OrderedDict()
@@ -75,13 +80,17 @@ class Engine():
         if enable_preview:
             trt_version = [int(i) for i in trt.__version__.split(".")]
             # FASTER_DYNAMIC_SHAPES_0805 should only be used for TRT 8.5.1 or above.
-            if trt_version[0] > 8 or \
-                    (trt_version[0] == 8 and (trt_version[1] > 5 or (trt_version[1] == 5 and trt_version[2] >= 1))):
+            if trt_version[0] > 8 or (
+                trt_version[0] == 8 and (trt_version[1] > 5 or (trt_version[1] == 5 and trt_version[2] >= 1))
+            ):
                 preview_features = [trt.PreviewFeature.FASTER_DYNAMIC_SHAPES_0805]
 
-        engine = engine_from_network(network_from_onnx_path(onnx_path), config=CreateConfig(fp16=fp16, profiles=[p],
-                                                                                            preview_features=preview_features,
-                                                                                            sparse_weights=sparse_weights))
+        engine = engine_from_network(
+            network_from_onnx_path(onnx_path),
+            config=CreateConfig(
+                fp16=fp16, profiles=[p], preview_features=preview_features, sparse_weights=sparse_weights
+            ),
+        )
         save_engine(engine, path=self.engine_path)
 
     def activate(self, plugin_path=""):
@@ -102,7 +111,7 @@ class Engine():
         result = self.context.set_binding_shape(idx, shape)
         return result
 
-    def allocate_buffers(self, shape_dict=None, device='cuda'):
+    def allocate_buffers(self, shape_dict=None, device="cuda"):
         print("Allocate buffers and bindings inputs:")
         for idx in range(trt_util.get_bindings_per_profile(self.engine)):
             binding = self.engine[idx]
@@ -112,12 +121,14 @@ class Engine():
             else:
                 shape = self.engine.get_binding_shape(binding)
             nv_dtype = self.engine.get_binding_dtype(binding)
-            dtype_map = {trt.DataType.FLOAT: np.float32,
-                         trt.DataType.HALF: np.float16,
-                         trt.DataType.INT8: np.int8,
-                         trt.DataType.INT64: np.int64,
-                         trt.DataType.BOOL: bool}
-            if hasattr(trt.DataType, 'INT32'):
+            dtype_map = {
+                trt.DataType.FLOAT: np.float32,
+                trt.DataType.HALF: np.float16,
+                trt.DataType.INT8: np.int8,
+                trt.DataType.INT64: np.int64,
+                trt.DataType.BOOL: bool,
+            }
+            if hasattr(trt.DataType, "INT32"):
                 dtype_map[trt.DataType.INT32] = np.int32
             dtype = dtype_map[nv_dtype]
             if self.engine.binding_is_input(binding):
@@ -142,7 +153,7 @@ class Engine():
         bindings = [0] * start_binding + [buf.ptr for buf in device_buffers.values()]
         noerror = self.context.execute_async_v2(bindings=bindings, stream_handle=stream.ptr)
         if not noerror:
-            raise ValueError(f"ERROR: inference failed.")
+            raise ValueError("ERROR: inference failed.")
 
         for idx in range(trt_util.get_bindings_per_profile(self.engine)):
             binding = self.engine[idx]

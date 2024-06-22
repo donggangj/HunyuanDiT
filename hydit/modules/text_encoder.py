@@ -30,9 +30,7 @@ class MT5Embedder(nn.Module):
             return
         if conditional_generation:
             self.model = None
-            self.generation_model = T5ForConditionalGeneration.from_pretrained(
-                model_dir
-            )
+            self.generation_model = T5ForConditionalGeneration.from_pretrained(model_dir)
             return
         self.model = T5EncoderModel.from_pretrained(model_dir, **model_kwargs).eval().to(self.torch_dtype)
 
@@ -66,9 +64,7 @@ class MT5Embedder(nn.Module):
         with torch.no_grad():
             outputs = self.model(
                 input_ids=text_tokens_and_mask["input_ids"].to(self.device),
-                attention_mask=text_tokens_and_mask["attention_mask"].to(self.device)
-                if attention_mask
-                else None,
+                attention_mask=text_tokens_and_mask["attention_mask"].to(self.device) if attention_mask else None,
                 output_hidden_states=True,
             )
             text_encoder_embs = outputs["hidden_states"][layer_index].detach()

@@ -3,7 +3,7 @@ from copy import deepcopy
 
 import torch
 from deepspeed.utils import instrument_w_nvtx
-from pathlib import Path
+
 
 def requires_grad(model, flag=True):
     """
@@ -13,9 +13,9 @@ def requires_grad(model, flag=True):
         p.requires_grad = flag
 
 
-class EMA(object):
+class EMA:
     def __init__(self, args, model, device, logger):
-        if args.ema_dtype == 'fp32':
+        if args.ema_dtype == "fp32":
             self.warmup = args.ema_warmup
             self.update_after_step = 0
             self.max_value = args.ema_decay if args.ema_decay is not None else 0.9999
@@ -34,25 +34,27 @@ class EMA(object):
         self.ema_reset_decay = args.ema_reset_decay
         self.decay_steps = 0
 
-        if args.ema_dtype == 'none':
-            ema_dtype = 'fp16' if args.use_fp16 else 'fp32'
+        if args.ema_dtype == "none":
+            ema_dtype = "fp16" if args.use_fp16 else "fp32"
         else:
             ema_dtype = args.ema_dtype
-        
+
         # 由于module.half()和module.float()会发生inplace类型修改，因此需要先copy后修改类型
         self.ema_model = deepcopy(model)
-        if ema_dtype == 'fp16':
+        if ema_dtype == "fp16":
             self.ema_model = self.ema_model.half().to(device)
-        elif ema_dtype == 'fp32':
+        elif ema_dtype == "fp32":
             self.ema_model = self.ema_model.float().to(device)
         else:
             raise ValueError(f"Unknown EMA dtype {ema_dtype}.")
 
         requires_grad(self.ema_model, False)
 
-        logger.info(f"    Using EMA with date type {args.ema_dtype} "
-                    f"(decay={args.ema_decay}, warmup={args.ema_warmup}, warmup_power={args.ema_warmup_power}, "
-                    f"reset_decay={args.ema_reset_decay}).")
+        logger.info(
+            f"    Using EMA with date type {args.ema_dtype} "
+            f"(decay={args.ema_decay}, warmup={args.ema_warmup}, warmup_power={args.ema_warmup_power}, "
+            f"reset_decay={args.ema_reset_decay})."
+        )
 
     def get_decay(self):
         """

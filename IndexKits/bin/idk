@@ -2,9 +2,9 @@
 
 import argparse
 
-from index_kits.dataset.make_dataset_core import startup, make_multireso
-from index_kits.common import show_index_info
 from index_kits import __version__
+from index_kits.common import show_index_info
+from index_kits.dataset.make_dataset_core import make_multireso, startup
 
 
 def common_args(parser):
@@ -13,39 +13,39 @@ def common_args(parser):
 
 def get_args():
     parser = argparse.ArgumentParser(description="""
-    IndexKits is a tool to build and manage index files for large-scale datasets. 
+    IndexKits is a tool to build and manage index files for large-scale datasets.
     It supports both base index and multi-resolution index.
-    
+
     Introduction
     ------------
     This command line tool provides the following functionalities:
     1. Show index v2 information
     2. Build base index v2
     3. Build multi-resolution index v2
-    
+
     Examples
     --------
     1. Show index v2 information
         index_kits show /path/to/index.json
-    
+
     2. Build base index v2
         Default usage:
         index_kits base -c /path/to/config.yaml -t /path/to/index.json
-        
+
         Use multiple processes:
         index_kits base -c /path/to/config.yaml -t /path/to/index.json -w 40
-    
+
     3. Build multi-resolution index v2
-    
+
         Build with a configuration file:
         index_kits multireso -c /path/to/config.yaml -t /path/to/index_mb_gt512.json
-        
+
         Build by specifying arguments without a configuration file:
-        index_kits multireso --src /path/to/index.json --base-size 512 --reso-step 32 --min-size 512 -t /path/to/index_mb_gt512.json 
-        
+        index_kits multireso --src /path/to/index.json --base-size 512 --reso-step 32 --min-size 512 -t /path/to/index_mb_gt512.json
+
         Build by specifying target-ratios:
         index_kits multireso --src /path/to/index.json --base-size 512 --target-ratios 1:1 4:3 3:4 16:9 9:16 --min-size 512 -t /path/to/index_mb_gt512.json
-        
+
         Build with multiple source index files.
         index_kits multireso --src /path/to/index1.json /path/to/index2.json --base-size 512 --reso-step 32 --min-size 512 -t /path/to/index_mb_gt512.json
     """, formatter_class=argparse.RawTextHelpFormatter)
@@ -54,7 +54,7 @@ def get_args():
     # Show index message
     show_parser = sub_parsers.add_parser('show', description="""
     Show base/multireso index v2 information.
-    
+
     Example
     -------
     index_kits show /path/to/index.json
@@ -68,7 +68,7 @@ def get_args():
     # Single resolution bucket
     base_parser = sub_parsers.add_parser('base', description="""
     Build base index v2.
-    
+
     Example
     -------
     index_kits base -c /path/to/config.yaml -t /path/to/index.json
@@ -83,18 +83,18 @@ def get_args():
     # Multi-resolution bucket
     mo_parser = sub_parsers.add_parser('multireso', description="""
     Build multi-resolution index v2
-    
+
     Example
     -------
     Build with a configuration file:
     index_kits multireso -c /path/to/config.yaml -t /path/to/index_mb_gt512.json
-    
+
     Build by specifying arguments without a configuration file:
     index_kits multireso --src /path/to/index.json --base-size 512 --reso-step 32 --min-size 512 -t /path/to/index_mb_gt512.json
-    
+
     Build by specifying target-ratios:
     index_kits multireso --src /path/to/index.json --base-size 512 --target-ratios 1:1 4:3 3:4 16:9 9:16 --min-size 512 -t /path/to/index_mb_gt512.json
-    
+
     Build with multiple source index files.
     index_kits multireso --src /path/to/index1.json /path/to/index2.json --base-size 512 --reso-step 32 --min-size 512 -t /path/to/index_mb_gt512.json
     """, formatter_class=argparse.RawTextHelpFormatter)

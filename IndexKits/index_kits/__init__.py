@@ -1,11 +1,12 @@
 from .bucket import (
     MultiIndexV2,
-    MultiResolutionBucketIndexV2, MultiMultiResolutionBucketIndexV2,
-    build_multi_resolution_bucket
+    MultiMultiResolutionBucketIndexV2,
+    MultiResolutionBucketIndexV2,
+    Resolution,
+    ResolutionGroup,
+    build_multi_resolution_bucket,
 )
-from .bucket import Resolution, ResolutionGroup
-from .indexer import IndexV2Builder, ArrowIndexV2
 from .common import load_index, show_index_info
+from .indexer import ArrowIndexV2, IndexV2Builder
 
 __version__ = "0.3.5"
-

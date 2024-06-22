@@ -1,34 +1,36 @@
 import argparse
-import torch
-import sys
 import os
+import sys
+
+import torch
+
 # 添加当前命令行运行的目录到 sys.path
-sys.path.append(os.getcwd()+"/dialoggen")
+sys.path.append(os.getcwd() + "/dialoggen")
 
 
-from llava.constants import (
-    IMAGE_TOKEN_INDEX,
-    DEFAULT_IMAGE_TOKEN,
-    DEFAULT_IM_START_TOKEN,
-    DEFAULT_IM_END_TOKEN,
-    IMAGE_PLACEHOLDER,
-)
-from llava.conversation import conv_templates, SeparatorStyle
-from llava.model.builder import load_pretrained_model
-from llava.utils import disable_torch_init
-from llava.mm_utils import (
-    process_images,
-    tokenizer_image_token,
-    get_model_name_from_path,
-)
+import re
+from io import BytesIO
 
 import requests
+from llava.constants import (
+    DEFAULT_IM_END_TOKEN,
+    DEFAULT_IM_START_TOKEN,
+    DEFAULT_IMAGE_TOKEN,
+    IMAGE_PLACEHOLDER,
+    IMAGE_TOKEN_INDEX,
+)
+from llava.conversation import conv_templates
+from llava.mm_utils import (
+    get_model_name_from_path,
+    process_images,
+    tokenizer_image_token,
+)
+from llava.model.builder import load_pretrained_model
+from llava.utils import disable_torch_init
 from PIL import Image
-from io import BytesIO
-import re
 
 
-def image_parser(image_file, sep=','):
+def image_parser(image_file, sep=","):
     out = image_file.split(sep)
     return out
 
@@ -53,24 +55,24 @@ def load_images(image_files):
 def init_dialoggen_model(model_path, model_base=None, load_4bit=False):
     model_name = get_model_name_from_path(model_path)
     tokenizer, model, image_processor, context_len = load_pretrained_model(
-        model_path, model_base, model_name, llava_type_model=True, load_4bit=load_4bit)
-    return {"tokenizer": tokenizer,
-            "model": model,
-            "image_processor": image_processor}
+        model_path, model_base, model_name, llava_type_model=True, load_4bit=load_4bit
+    )
+    return {"tokenizer": tokenizer, "model": model, "image_processor": image_processor}
 
 
-def eval_model(models,
-               query='详细描述一下这张图片',
-               image_file=None,
-               sep=',',
-               temperature=0.2,
-               top_p=None,
-               num_beams=1,
-               max_new_tokens=512,
-               return_history=False,
-               history=None,
-               skip_special=False
-               ):
+def eval_model(
+    models,
+    query="详细描述一下这张图片",
+    image_file=None,
+    sep=",",
+    temperature=0.2,
+    top_p=None,
+    num_beams=1,
+    max_new_tokens=512,
+    return_history=False,
+    history=None,
+    skip_special=False,
+):
     # Model
     disable_torch_init()
 
@@ -86,9 +88,9 @@ def eval_model(models,
             qs = image_token_se + "\n" + qs
         else:
             qs = DEFAULT_IMAGE_TOKEN + "\n" + qs
-            
+
     if not history:
-        conv = conv_templates['llava_v1'].copy()
+        conv = conv_templates["llava_v1"].copy()
     else:
         conv = history
 
@@ -103,28 +105,26 @@ def eval_model(models,
         image_files = image_parser(image_file, sep=sep)
         images = load_images(image_files)
         image_sizes = [x.size for x in images]
-        images_tensor = process_images(
-            images,
-            models["image_processor"],
-            models["model"].config
-        ).to(models["model"].device, dtype=torch.float16)
+        images_tensor = process_images(images, models["image_processor"], models["model"].config).to(
+            models["model"].device, dtype=torch.float16
+        )
     else:
         # fomatted input as training data
         image_sizes = [(1024, 1024)]
-        images_tensor = torch.zeros(1, 5, 3, models["image_processor"].crop_size["height"], models["image_processor"].crop_size["width"])
+        images_tensor = torch.zeros(
+            1, 5, 3, models["image_processor"].crop_size["height"], models["image_processor"].crop_size["width"]
+        )
         images_tensor = images_tensor.to(models["model"].device, dtype=torch.float16)
 
     input_ids = (
-        tokenizer_image_token(prompt, models["tokenizer"], IMAGE_TOKEN_INDEX, return_tensors="pt")
-        .unsqueeze(0)
-        .cuda()
+        tokenizer_image_token(prompt, models["tokenizer"], IMAGE_TOKEN_INDEX, return_tensors="pt").unsqueeze(0).cuda()
     )
     with torch.inference_mode():
         output_ids = models["model"].generate(
             input_ids,
             images=images_tensor,
             image_sizes=image_sizes,
-            do_sample=True if temperature > 0 else False,
+            do_sample=temperature > 0,
             temperature=temperature,
             top_p=top_p,
             num_beams=num_beams,
@@ -140,7 +140,7 @@ def eval_model(models,
 
 def remove_prefix(text):
     if text.startswith("<画图>"):
-        return text[len("<画图>"):], True
+        return text[len("<画图>") :], True
     elif text.startswith("对不起"):
         # 拒绝画图
         return "", False
@@ -148,7 +148,7 @@ def remove_prefix(text):
         return text, True
 
 
-class DialogGen(object):
+class DialogGen:
     def __init__(self, model_path, load_4bit=False):
         self.models = init_dialoggen_model(model_path, load_4bit=load_4bit)
         self.query_template = "请先判断用户的意图，若为画图则在输出前加入<画图>:{}"
@@ -160,7 +160,7 @@ class DialogGen(object):
             image_file=None,
             return_history=return_history,
             history=history,
-            skip_special=skip_special
+            skip_special=skip_special,
         )
         if return_history:
             return enhanced_prompt
@@ -173,16 +173,17 @@ class DialogGen(object):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument('--model_path', type=str, default='./ckpts/dialoggen')
-    parser.add_argument('--prompt', type=str, default='画一只小猫')
-    parser.add_argument('--image_file', type=str, default=None) # 'images/demo1.jpeg'
+    parser.add_argument("--model_path", type=str, default="./ckpts/dialoggen")
+    parser.add_argument("--prompt", type=str, default="画一只小猫")
+    parser.add_argument("--image_file", type=str, default=None)  # 'images/demo1.jpeg'
     args = parser.parse_args()
 
     query = f"请先判断用户的意图，若为画图则在输出前加入<画图>:{args.prompt}"
 
     models = init_dialoggen_model(args.model_path)
 
-    res = eval_model(models,
+    res = eval_model(
+        models,
         query=query,
         image_file=args.image_file,
     )

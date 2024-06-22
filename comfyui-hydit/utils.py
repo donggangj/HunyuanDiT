@@ -1,17 +1,8 @@
 import io
-import torch
-import requests
+
 import numpy as np
-from PIL import Image
-from omegaconf import OmegaConf
-from torchvision.transforms import ToTensor
-from diffusers.pipelines.stable_diffusion.convert_from_ckpt import (
-    assign_to_checkpoint,
-    conv_attn_to_linear,
-    create_vae_diffusers_config,
-    renew_vae_attention_paths,
-    renew_vae_resnet_paths,
-)
+import requests
+import torch
 from diffusers import (
     AutoencoderKL,
     DDIMScheduler,
@@ -26,50 +17,73 @@ from diffusers import (
     KDPM2DiscreteScheduler,
     UniPCMultistepScheduler,
 )
+from diffusers.pipelines.stable_diffusion.convert_from_ckpt import (
+    assign_to_checkpoint,
+    conv_attn_to_linear,
+    create_vae_diffusers_config,
+    renew_vae_attention_paths,
+    renew_vae_resnet_paths,
+)
+from omegaconf import OmegaConf
+from PIL import Image
+from torchvision.transforms import ToTensor
 
 SCHEDULERS = {
-    'DDIM' : DDIMScheduler,
-    'DDPM' : DDPMScheduler,
-    'DEISMultistep' : DEISMultistepScheduler,
-    'DPMSolverMultistep' : DPMSolverMultistepScheduler,
-    'DPMSolverSinglestep' : DPMSolverSinglestepScheduler,
-    'EulerAncestralDiscrete' : EulerAncestralDiscreteScheduler,
-    'EulerDiscrete' : EulerDiscreteScheduler,
-    'HeunDiscrete' : HeunDiscreteScheduler,
-    'KDPM2AncestralDiscrete' : KDPM2AncestralDiscreteScheduler,
-    'KDPM2Discrete' : KDPM2DiscreteScheduler,
-    'UniPCMultistep' : UniPCMultistepScheduler
+    "DDIM": DDIMScheduler,
+    "DDPM": DDPMScheduler,
+    "DEISMultistep": DEISMultistepScheduler,
+    "DPMSolverMultistep": DPMSolverMultistepScheduler,
+    "DPMSolverSinglestep": DPMSolverSinglestepScheduler,
+    "EulerAncestralDiscrete": EulerAncestralDiscreteScheduler,
+    "EulerDiscrete": EulerDiscreteScheduler,
+    "HeunDiscrete": HeunDiscreteScheduler,
+    "KDPM2AncestralDiscrete": KDPM2AncestralDiscreteScheduler,
+    "KDPM2Discrete": KDPM2DiscreteScheduler,
+    "UniPCMultistep": UniPCMultistepScheduler,
 }
 
 SCHEDULERS_hunyuan = ["ddpm", "ddim", "dpmms"]
+
 
 def token_auto_concat_embeds(pipe, positive, negative):
     max_length = pipe.tokenizer.model_max_length
     positive_length = pipe.tokenizer(positive, return_tensors="pt").input_ids.shape[-1]
     negative_length = pipe.tokenizer(negative, return_tensors="pt").input_ids.shape[-1]
-    
-    print(f'Token length is model maximum: {max_length}, positive length: {positive_length}, negative length: {negative_length}.')
+
+    print(
+        f"Token length is model maximum: {max_length}, "
+        f"positive length: {positive_length}, negative length: {negative_length}."
+    )
     if max_length < positive_length or max_length < negative_length:
-        print('Concatenated embedding.')
+        print("Concatenated embedding.")
         if positive_length > negative_length:
             positive_ids = pipe.tokenizer(positive, return_tensors="pt").input_ids.to("cuda")
-            negative_ids = pipe.tokenizer(negative, truncation=False, padding="max_length", max_length=positive_ids.shape[-1], return_tensors="pt").input_ids.to("cuda")
+            negative_ids = pipe.tokenizer(
+                negative, truncation=False, padding="max_length", max_length=positive_ids.shape[-1], return_tensors="pt"
+            ).input_ids.to("cuda")
         else:
-            negative_ids = pipe.tokenizer(negative, return_tensors="pt").input_ids.to("cuda")  
-            positive_ids = pipe.tokenizer(positive, truncation=False, padding="max_length", max_length=negative_ids.shape[-1],  return_tensors="pt").input_ids.to("cuda")
+            negative_ids = pipe.tokenizer(negative, return_tensors="pt").input_ids.to("cuda")
+            positive_ids = pipe.tokenizer(
+                positive, truncation=False, padding="max_length", max_length=negative_ids.shape[-1], return_tensors="pt"
+            ).input_ids.to("cuda")
     else:
-        positive_ids = pipe.tokenizer(positive, truncation=False, padding="max_length", max_length=max_length,  return_tensors="pt").input_ids.to("cuda")
-        negative_ids = pipe.tokenizer(negative, truncation=False, padding="max_length", max_length=max_length, return_tensors="pt").input_ids.to("cuda")
-    
+        positive_ids = pipe.tokenizer(
+            positive, truncation=False, padding="max_length", max_length=max_length, return_tensors="pt"
+        ).input_ids.to("cuda")
+        negative_ids = pipe.tokenizer(
+            negative, truncation=False, padding="max_length", max_length=max_length, return_tensors="pt"
+        ).input_ids.to("cuda")
+
     positive_concat_embeds = []
     negative_concat_embeds = []
     for i in range(0, positive_ids.shape[-1], max_length):
-        positive_concat_embeds.append(pipe.text_encoder(positive_ids[:, i: i + max_length])[0])
-        negative_concat_embeds.append(pipe.text_encoder(negative_ids[:, i: i + max_length])[0])
-    
+        positive_concat_embeds.append(pipe.text_encoder(positive_ids[:, i : i + max_length])[0])
+        negative_concat_embeds.append(pipe.text_encoder(negative_ids[:, i : i + max_length])[0])
+
     positive_prompt_embeds = torch.cat(positive_concat_embeds, dim=1)
     negative_prompt_embeds = torch.cat(negative_concat_embeds, dim=1)
     return positive_prompt_embeds, negative_prompt_embeds
+
 
 # Reference from : https://github.com/huggingface/diffusers/blob/main/scripts/convert_vae_pt_to_diffusers.py
 def custom_convert_ldm_vae_checkpoint(checkpoint, config):
@@ -172,6 +186,7 @@ def custom_convert_ldm_vae_checkpoint(checkpoint, config):
     conv_attn_to_linear(new_checkpoint)
     return new_checkpoint
 
+
 # Reference from : https://github.com/huggingface/diffusers/blob/main/scripts/convert_vae_pt_to_diffusers.py
 def vae_pt_to_vae_diffuser(
     checkpoint_path: str,
@@ -208,8 +223,10 @@ def vae_pt_to_vae_diffuser(
 def convert_images_to_tensors(images: list[Image.Image]):
     return torch.stack([np.transpose(ToTensor()(image), (1, 2, 0)) for image in images])
 
+
 def convert_tensors_to_images(images: torch.tensor):
-    return [Image.fromarray(np.clip(255. * image.cpu().numpy(), 0, 255).astype(np.uint8)) for image in images]
+    return [Image.fromarray(np.clip(255.0 * image.cpu().numpy(), 0, 255).astype(np.uint8)) for image in images]
+
 
 def resize_images(images: list[Image.Image], size: tuple[int, int]):
     return [image.resize(size) for image in images]

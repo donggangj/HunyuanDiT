@@ -1,15 +1,14 @@
 from pathlib import Path
 
-import torch
-from loguru import logger
-
-from hydit.config import get_args
-from hydit.modules.models import HunYuanDiT, HUNYUAN_DIT_CONFIG
-
 import numpy as np
 import onnx
 import onnx_graphsurgeon as gs
 import polygraphy.backend.onnx.loader
+import torch
+from loguru import logger
+
+from hydit.config import get_args
+from hydit.modules.models import HUNYUAN_DIT_CONFIG, HunYuanDiT
 
 
 def _to_tuple(val):
@@ -27,7 +26,7 @@ def _to_tuple(val):
     return val
 
 
-class ExportONNX(object):
+class ExportONNX:
     def __init__(self, args, models_root_path):
         self.args = args
         self.model = None
@@ -53,7 +52,7 @@ class ExportONNX(object):
     def load_model(self):
         # ========================================================================
         # Create model structure and load the checkpoint
-        logger.info(f"Building HunYuan-DiT model...")
+        logger.info("Building HunYuan-DiT model...")
         model_config = HUNYUAN_DIT_CONFIG[self.args.model]
         image_size = _to_tuple(self.args.image_size)
         latent_size = (image_size[0] // 8, image_size[1] // 8)
@@ -64,19 +63,24 @@ class ExportONNX(object):
             raise ValueError(f"model_path not exists: {model_path}")
 
         # Build model structure
-        self.model = HunYuanDiT(self.args,
-                                input_size=latent_size,
-                                **model_config,
-                                log_fn=logger.info,
-                                ).half().to(self.device)    # Force to use fp16
+        self.model = (
+            HunYuanDiT(
+                self.args,
+                input_size=latent_size,
+                **model_config,
+                log_fn=logger.info,
+            )
+            .half()
+            .to(self.device)
+        )  # Force to use fp16
         # Load model checkpoint
         logger.info(f"Loading torch model {model_path}...")
         state_dict = torch.load(model_path, map_location=lambda storage, loc: storage)
         self.model.load_state_dict(state_dict)
         self.model.eval()
-        logger.info(f"Loading torch model finished")
+        logger.info("Loading torch model finished")
         logger.info("==================================================")
-        logger.info(f"                Model is ready.                  ")
+        logger.info("                Model is ready.                  ")
         logger.info("==================================================")
 
     def export(self):
@@ -107,27 +111,44 @@ class ExportONNX(object):
             attention_mask,
             prompt_embeds_t5,
             attention_mask_t5,
-            ims, style,
+            ims,
+            style,
             freqs_cis_img[0],
-            freqs_cis_img[1]
+            freqs_cis_img[1],
         )
-        torch.onnx.export(self.model,
-                          model_args,
-                          str(save_to),
-                          export_params=True,
-                          opset_version=17,
-                          do_constant_folding=True,
-                          input_names=["x", "t", "encoder_hidden_states", "text_embedding_mask",
-                                       "encoder_hidden_states_t5", "text_embedding_mask_t5", "image_meta_size", "style",
-                                       "cos_cis_img", "sin_cis_img"],
-                          output_names=["output"],
-                          dynamic_axes={"x": {0: "2B", 2: "H", 3: "W"}, "t": {0: "2B"},
-                                        "encoder_hidden_states": {0: "2B"},
-                                        "text_embedding_mask": {0: "2B"}, "encoder_hidden_states_t5": {0: "2B"},
-                                        "text_embedding_mask_t5": {0: "2B"},
-                                        "image_meta_size": {0: "2B"}, "style": {0: "2B"}, "cos_cis_img": {0: "seqlen"},
-                                        "sin_cis_img": {0: "seqlen"}},
-                          )
+        torch.onnx.export(
+            self.model,
+            model_args,
+            str(save_to),
+            export_params=True,
+            opset_version=17,
+            do_constant_folding=True,
+            input_names=[
+                "x",
+                "t",
+                "encoder_hidden_states",
+                "text_embedding_mask",
+                "encoder_hidden_states_t5",
+                "text_embedding_mask_t5",
+                "image_meta_size",
+                "style",
+                "cos_cis_img",
+                "sin_cis_img",
+            ],
+            output_names=["output"],
+            dynamic_axes={
+                "x": {0: "2B", 2: "H", 3: "W"},
+                "t": {0: "2B"},
+                "encoder_hidden_states": {0: "2B"},
+                "text_embedding_mask": {0: "2B"},
+                "encoder_hidden_states_t5": {0: "2B"},
+                "text_embedding_mask_t5": {0: "2B"},
+                "image_meta_size": {0: "2B"},
+                "style": {0: "2B"},
+                "cos_cis_img": {0: "seqlen"},
+                "sin_cis_img": {0: "seqlen"},
+            },
+        )
         logger.info("Exporting onnx finished")
 
     def postprocessing(self):
@@ -142,19 +163,22 @@ class ExportONNX(object):
         # ADD GAMMA BETA FOR LN
         for node in graph.nodes:
             if node.name == "/final_layer/norm_final/LayerNormalization":
-                constantKernel = gs.Constant("final_layer.norm_final.weight",
-                                             np.ascontiguousarray(np.ones((1408,), dtype=np.float16)))
-                constantBias = gs.Constant("final_layer.norm_final.bias",
-                                           np.ascontiguousarray(np.zeros((1408,), dtype=np.float16)))
+                constantKernel = gs.Constant(
+                    "final_layer.norm_final.weight", np.ascontiguousarray(np.ones((1408,), dtype=np.float16))
+                )
+                constantBias = gs.Constant(
+                    "final_layer.norm_final.bias", np.ascontiguousarray(np.zeros((1408,), dtype=np.float16))
+                )
                 node.inputs = [node.inputs[0], constantKernel, constantBias]
 
         graph.cleanup().toposort()
-        onnx.save(gs.export_onnx(graph.cleanup()),
-                  str(save_to),
-                  save_as_external_data=True,
-                  all_tensors_to_one_file=False,
-                  location=str(save_to.parent),
-                  )
+        onnx.save(
+            gs.export_onnx(graph.cleanup()),
+            str(save_to),
+            save_as_external_data=True,
+            all_tensors_to_one_file=False,
+            location=str(save_to.parent),
+        )
         logger.info(f"Postprocessing ONNX model finished: {save_to}")
 
     def fuse_attn(self):
@@ -170,10 +194,12 @@ class ExportONNX(object):
 
         cnt = 0
         for node in graph.nodes:
-
-            if node.op == "Softmax" and node.i().op == "MatMul" and node.o().op == "MatMul" and \
-                    node.o().o().op == "Transpose":
-
+            if (
+                node.op == "Softmax"
+                and node.i().op == "MatMul"
+                and node.o().op == "MatMul"
+                and node.o().o().op == "Transpose"
+            ):
                 if "pooler" in node.name:
                     continue
 
@@ -183,26 +209,35 @@ class ExportONNX(object):
                     transpose.attrs["perm"] = [0, 2, 1, 3]
                     k = transpose.outputs[0]
                     q = gs.Variable("transpose_0_v_{}".format(cnt), np.dtype(np.float16))
-                    transpose_0 = gs.Node("Transpose", "Transpose_0_{}".format(cnt),
-                                          attrs={"perm": [0, 2, 1, 3]},
-                                          inputs=[matmul_0.inputs[0]],
-                                          outputs=[q])
+                    transpose_0 = gs.Node(
+                        "Transpose",
+                        "Transpose_0_{}".format(cnt),
+                        attrs={"perm": [0, 2, 1, 3]},
+                        inputs=[matmul_0.inputs[0]],
+                        outputs=[q],
+                    )
                     graph.nodes.append(transpose_0)
 
                     matmul_1 = node.o()
                     v = gs.Variable("transpose_1_v_{}".format(cnt), np.dtype(np.float16))
-                    transpose_1 = gs.Node("Transpose", "Transpose_1_{}".format(cnt),
-                                          attrs={"perm": [0, 2, 1, 3]},
-                                          inputs=[matmul_1.inputs[1]],
-                                          outputs=[v])
+                    transpose_1 = gs.Node(
+                        "Transpose",
+                        "Transpose_1_{}".format(cnt),
+                        attrs={"perm": [0, 2, 1, 3]},
+                        inputs=[matmul_1.inputs[1]],
+                        outputs=[v],
+                    )
                     graph.nodes.append(transpose_1)
 
                     output_variable = node.o().o().outputs[0]
                     # fMHA_v = gs.Variable("fMHA_v", np.dtype(np.float16))
-                    fMHA = gs.Node("fMHAPlugin", "fMHAPlugin_1_{}".format(cnt),
-                                   # attrs={"scale": 1.0},
-                                   inputs=[q, k, v],
-                                   outputs=[output_variable])
+                    fMHA = gs.Node(
+                        "fMHAPlugin",
+                        "fMHAPlugin_1_{}".format(cnt),
+                        # attrs={"scale": 1.0},
+                        inputs=[q, k, v],
+                        outputs=[output_variable],
+                    )
                     graph.nodes.append(fMHA)
                     node.o().o().outputs = []
                     cnt = cnt + 1
@@ -217,20 +252,24 @@ class ExportONNX(object):
                     k = transpose_k.inputs[0]
                     v = transpose_v.inputs[0]
                     output_variable = node.o().o().outputs[0]
-                    fMHA = gs.Node("fMHAPlugin", "fMHAPlugin_1_{}".format(cnt),
-                                   # attrs={"scale": 1.0},
-                                   inputs=[q, k, v],
-                                   outputs=[output_variable])
+                    fMHA = gs.Node(
+                        "fMHAPlugin",
+                        "fMHAPlugin_1_{}".format(cnt),
+                        # attrs={"scale": 1.0},
+                        inputs=[q, k, v],
+                        outputs=[output_variable],
+                    )
                     graph.nodes.append(fMHA)
                     node.o().o().outputs = []
                     cnt = cnt + 1
 
         logger.info("mha count: ", cnt)
 
-        onnx.save(gs.export_onnx(graph.cleanup()),
-                  str(save_to),
-                  save_as_external_data=True,
-                  )
+        onnx.save(
+            gs.export_onnx(graph.cleanup()),
+            str(save_to),
+            save_as_external_data=True,
+        )
         logger.info(f"FuseAttn ONNX model finished: {save_to}")
 
 

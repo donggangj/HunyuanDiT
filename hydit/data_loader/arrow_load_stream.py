@@ -1,43 +1,40 @@
-import pickle
 import random
 from pathlib import Path
-import ast
-import numpy as np
-import re
-import json
-import time
-from functools import partial
-from PIL import Image
 
+import numpy as np
 import torch
 import torchvision.transforms as T
-import torch.nn.functional as F
-from torchvision.transforms import functional as TF
+from PIL import Image
 from torch.utils.data import Dataset
 
-from IndexKits.index_kits import ArrowIndexV2, MultiResolutionBucketIndexV2, MultiIndexV2
+from IndexKits.index_kits import (
+    ArrowIndexV2,
+    MultiIndexV2,
+    MultiResolutionBucketIndexV2,
+)
 
 
 class TextImageArrowStream(Dataset):
-    def __init__(self,
-                 args,
-                 resolution=512,
-                 random_flip=None,
-                 enable_CN=True,
-                 log_fn=print,
-                 index_file=None,
-                 multireso=False,
-                 batch_size=-1,
-                 world_size=1,
-                 random_shrink_size_cond=False,
-                 merge_src_cond=False,
-                 uncond_p=0.0,
-                 text_ctx_len=77,
-                 tokenizer=None,
-                 uncond_p_t5=0.0,
-                 text_ctx_len_t5=256,
-                 tokenizer_t5=None,
-                 ):
+    def __init__(
+        self,
+        args,
+        resolution=512,
+        random_flip=None,
+        enable_CN=True,
+        log_fn=print,
+        index_file=None,
+        multireso=False,
+        batch_size=-1,
+        world_size=1,
+        random_shrink_size_cond=False,
+        merge_src_cond=False,
+        uncond_p=0.0,
+        text_ctx_len=77,
+        tokenizer=None,
+        uncond_p_t5=0.0,
+        text_ctx_len_t5=256,
+        tokenizer_t5=None,
+    ):
         self.args = args
         self.resolution = resolution
         self.log_fn = lambda x: log_fn(f"    {Path(__file__).stem} | " + x)
@@ -92,7 +89,9 @@ class TextImageArrowStream(Dataset):
         if multireso:
             if isinstance(index_file, (list, tuple)):
                 if len(index_file) > 1:
-                    raise ValueError(f"When enabling multireso, index_file should be a single file, but got {index_file}")
+                    raise ValueError(
+                        f"When enabling multireso, index_file should be a single file, but got {index_file}"
+                    )
                 index_file = index_file[0]
             index_manager = MultiResolutionBucketIndexV2(index_file, batch_size, world_size)
             self.log_fn(f"Using MultiResolutionBucketIndexV2: {len(index_manager):,}")
@@ -115,7 +114,7 @@ class TextImageArrowStream(Dataset):
         try:
             ret = self.index_manager.get_image(index, image_key)
         except Exception as e:
-            self.log_fn(f'get_raw_image | Error: {e}')
+            self.log_fn(f"get_raw_image | Error: {e}")
             ret = Image.new("RGB", (256, 256), (255, 255, 255))
         return ret
 
@@ -147,14 +146,14 @@ class TextImageArrowStream(Dataset):
         return style
 
     def get_image_with_hwxy(self, index, image_key="image"):
-
         image = self.get_raw_image(index, image_key=image_key)
         origin_size = image.size
 
         if self.multireso:
             target_size = self.index_manager.get_target_size(index)
             image, crops_coords_top_left = self.index_manager.resize_and_crop(
-                image, target_size, resample=Image.LANCZOS, crop_type='random')
+                image, target_size, resample=Image.LANCZOS, crop_type="random"
+            )
             image_tensor = self.flip_norm(image)
         else:
             target_size = (self.resolution, self.resolution)
@@ -162,19 +161,21 @@ class TextImageArrowStream(Dataset):
             image_tensor = self.flip_norm(image_crop)
 
         if self.random_shrink_size_cond:
-            origin_size = (1024 if origin_size[0] < 1024 else origin_size[0],
-                           1024 if origin_size[1] < 1024 else origin_size[1])
+            origin_size = (
+                1024 if origin_size[0] < 1024 else origin_size[0],
+                1024 if origin_size[1] < 1024 else origin_size[1],
+            )
         if self.merge_src_cond:
             val = (origin_size[0] * origin_size[1]) ** 0.5
             origin_size = (val, val)
 
         image_meta_size = tuple(origin_size) + tuple(target_size) + tuple(crops_coords_top_left)
         kwargs = {
-            'image_meta_size': image_meta_size,
+            "image_meta_size": image_meta_size,
         }
 
         style = self.get_style(index)
-        kwargs['style'] = style
+        kwargs["style"] = style
 
         return image_tensor, kwargs
 
@@ -190,7 +191,7 @@ class TextImageArrowStream(Dataset):
         text_input_ids = text_inputs.input_ids[0]
         attention_mask = text_inputs.attention_mask[0].bool()
         if pad_num > 0:
-            attention_mask[1:pad_num + 1] = False
+            attention_mask[1 : pad_num + 1] = False
         return description, text_input_ids, attention_mask
 
     def fill_t5_token_mask(self, fill_tensor, fill_number, setting_length):
@@ -206,21 +207,25 @@ class TextImageArrowStream(Dataset):
             truncation=True,
             return_attention_mask=True,
             add_special_tokens=True,
-            return_tensors='pt'
+            return_tensors="pt",
         )
-        text_input_ids_t5=self.fill_t5_token_mask(text_tokens_and_mask["input_ids"], fill_number=1, setting_length=self.text_ctx_len_t5).long()
-        attention_mask_t5=self.fill_t5_token_mask(text_tokens_and_mask["attention_mask"], fill_number=0, setting_length=self.text_ctx_len_t5).bool()
+        text_input_ids_t5 = self.fill_t5_token_mask(
+            text_tokens_and_mask["input_ids"], fill_number=1, setting_length=self.text_ctx_len_t5
+        ).long()
+        attention_mask_t5 = self.fill_t5_token_mask(
+            text_tokens_and_mask["attention_mask"], fill_number=0, setting_length=self.text_ctx_len_t5
+        ).bool()
         return description_t5, text_input_ids_t5, attention_mask_t5
 
     def get_original_text(self, ind):
-        text = self.index_manager.get_attribute(ind, 'text_zh' if self.enable_CN else 'text_en')
+        text = self.index_manager.get_attribute(ind, "text_zh" if self.enable_CN else "text_en")
         text = str(text).strip()
         return text
 
     def get_text(self, ind):
-        text =  self.get_original_text(ind)
-        if text == '':
-            text = '随机生成一张图片'
+        text = self.get_original_text(ind)
+        if text == "":
+            text = "随机生成一张图片"
         return text
 
     def __getitem__(self, ind):
