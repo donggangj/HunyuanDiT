@@ -25,7 +25,7 @@ This repo contains PyTorch model definitions, pre-trained weights and inference/
 > [**DialogGen: Multi-modal Interactive Dialogue System for Multi-turn Text-to-Image Generation**](https://arxiv.org/abs/2403.08857) <br>
 
 ## 🔥🔥🔥 News!!
-* Jun 13, 2024: :zap: HYDiT-v1.1 version is released, which mitigates the issue of image oversaturation and alleviates the watermark issue. Please check [HunyuanDiT-v1.1 ](https://huggingface.co/Tencent-Hunyuan/HunyuanDiT-v1.1) and 
+* Jun 13, 2024: :zap: HYDiT-v1.1 version is released, which mitigates the issue of image oversaturation and alleviates the watermark issue. Please check [HunyuanDiT-v1.1 ](https://huggingface.co/Tencent-Hunyuan/HunyuanDiT-v1.1) and
 [Distillation-v1.1](https://huggingface.co/Tencent-Hunyuan/Distillation-v1.1) for more details.
 * Jun 13, 2024: :truck: The training code is released, offering [full-parameter training](#full-parameter-training) and [LoRA training](#lora).
 * Jun 06, 2024: :tada: Hunyuan-DiT is now available in ComfyUI. Please check [ComfyUI](#using-comfyui) for more details.
@@ -46,10 +46,10 @@ You can use simple prompts similar to natural language text
 > draw a pig in a suit
 >
 > 生成一幅画，赛博朋克风，跑车
-> 
+>
 > generate a painting, cyberpunk style, sports car
 
-or multi-turn language interactions to create the picture. 
+or multi-turn language interactions to create the picture.
 
 > 画一个木制的鸟
 >
@@ -62,8 +62,8 @@ or multi-turn language interactions to create the picture.
 ## 📑 Open-source Plan
 
 - Hunyuan-DiT (Text-to-Image Model)
-  - [x] Inference 
-  - [x] Checkpoints 
+  - [x] Inference
+  - [x] Checkpoints
   - [x] Distillation Version
   - [x] TensorRT Version
   - [x] Training
@@ -74,9 +74,9 @@ or multi-turn language interactions to create the picture.
   - [ ] Caption model (Re-caption the raw image-text pairs)
 - [DialogGen](https://github.com/Centaurusalpha/DialogGen) (Prompt Enhancement Model)
   - [x] Inference
-- [X] Web Demo (Gradio) 
+- [X] Web Demo (Gradio)
 - [x] Multi-turn T2I Demo (Gradio)
-- [X] Cli Demo 
+- [X] Cli Demo
 - [X] ComfyUI
 - [X] Diffusers
 - [ ] WebUI
@@ -133,35 +133,35 @@ and output the new text prompt for image generation.
 In order to comprehensively compare the generation capabilities of HunyuanDiT and other models, we constructed a 4-dimensional test set, including Text-Image Consistency, Excluding AI Artifacts, Subject Clarity, Aesthetic. More than 50 professional evaluators performs the evaluation.
 
 <p align="center">
-<table> 
-<thead> 
-<tr> 
-    <th rowspan="2">Model</th> <th rowspan="2">Open Source</th> <th>Text-Image Consistency (%)</th> <th>Excluding AI Artifacts (%)</th> <th>Subject Clarity (%)</th> <th rowspan="2">Aesthetics (%)</th> <th rowspan="2">Overall (%)</th> 
-</tr> 
-</thead> 
-<tbody> 
-<tr> 
-    <td>SDXL</td> <td> ✔ </td> <td>64.3</td> <td>60.6</td> <td>91.1</td> <td>76.3</td> <td>42.7</td> 
-</tr> 
-<tr> 
-    <td>PixArt-α</td> <td> ✔</td> <td>68.3</td> <td>60.9</td> <td>93.2</td> <td>77.5</td> <td>45.5</td> 
-</tr> 
-<tr> 
-    <td>Playground 2.5</td> <td>✔</td> <td>71.9</td> <td>70.8</td> <td>94.9</td> <td>83.3</td> <td>54.3</td> 
-</tr> 
+<table>
+<thead>
+<tr>
+    <th rowspan="2">Model</th> <th rowspan="2">Open Source</th> <th>Text-Image Consistency (%)</th> <th>Excluding AI Artifacts (%)</th> <th>Subject Clarity (%)</th> <th rowspan="2">Aesthetics (%)</th> <th rowspan="2">Overall (%)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+    <td>SDXL</td> <td> ✔ </td> <td>64.3</td> <td>60.6</td> <td>91.1</td> <td>76.3</td> <td>42.7</td>
+</tr>
+<tr>
+    <td>PixArt-α</td> <td> ✔</td> <td>68.3</td> <td>60.9</td> <td>93.2</td> <td>77.5</td> <td>45.5</td>
+</tr>
+<tr>
+    <td>Playground 2.5</td> <td>✔</td> <td>71.9</td> <td>70.8</td> <td>94.9</td> <td>83.3</td> <td>54.3</td>
+</tr>
 
-<tr> 
-    <td>SD 3</td> <td>&#10008</td> <td>77.1</td> <td>69.3</td> <td>94.6</td> <td>82.5</td> <td>56.7</td> 
-    
-</tr> 
-<tr> 
-    <td>MidJourney v6</td><td>&#10008</td> <td>73.5</td> <td>80.2</td> <td>93.5</td> <td>87.2</td> <td>63.3</td> 
-</tr> 
-<tr> 
-    <td>DALL-E 3</td><td>&#10008</td> <td>83.9</td> <td>80.3</td> <td>96.5</td> <td>89.4</td> <td>71.0</td> 
-</tr> 
-<tr style="font-weight: bold; background-color: #f2f2f2;"> 
-    <td>Hunyuan-DiT</td><td>✔</td> <td>74.2</td> <td>74.3</td> <td>95.4</td> <td>86.6</td> <td>59.0</td> 
+<tr>
+    <td>SD 3</td> <td>&#10008</td> <td>77.1</td> <td>69.3</td> <td>94.6</td> <td>82.5</td> <td>56.7</td>
+
+</tr>
+<tr>
+    <td>MidJourney v6</td><td>&#10008</td> <td>73.5</td> <td>80.2</td> <td>93.5</td> <td>87.2</td> <td>63.3</td>
+</tr>
+<tr>
+    <td>DALL-E 3</td><td>&#10008</td> <td>83.9</td> <td>80.3</td> <td>96.5</td> <td>89.4</td> <td>71.0</td>
+</tr>
+<tr style="font-weight: bold; background-color: #f2f2f2;">
+    <td>Hunyuan-DiT</td><td>✔</td> <td>74.2</td> <td>74.3</td> <td>95.4</td> <td>86.6</td> <td>59.0</td>
 </tr>
 </tbody>
 </table>
@@ -202,7 +202,7 @@ The following table shows the requirements for running the models (batch size = 
 |       Hunyuan-DiT       |            -            |       11G       |      A100       |
 |       Hunyuan-DiT       |            -            |       14G       | RTX3090/RTX4090 |
 
-* An NVIDIA GPU with CUDA support is required. 
+* An NVIDIA GPU with CUDA support is required.
   * We have tested V100 and A100 GPUs.
   * **Minimum**: The minimum GPU memory required is 11GB.
   * **Recommended**: We recommend using a GPU with 32GB of memory for better generation quality.
@@ -265,10 +265,10 @@ HF_ENDPOINT=https://hf-mirror.com huggingface-cli download Tencent-Hunyuan/Hunyu
 
 ##### 2. Resume Download
 
-`huggingface-cli` supports resuming downloads. If the download is interrupted, you can just rerun the download 
+`huggingface-cli` supports resuming downloads. If the download is interrupted, you can just rerun the download
 command to resume the download process.
 
-Note: If an `No such file or directory: 'ckpts/.huggingface/.gitignore.lock'` like error occurs during the download 
+Note: If an `No such file or directory: 'ckpts/.huggingface/.gitignore.lock'` like error occurs during the download
 process, you can ignore the error and rerun the download command.
 
 </details>
@@ -292,18 +292,18 @@ All models will be automatically downloaded. For more information about the mode
 
 ### Data Preparation
 
-  Refer to the commands below to prepare the training data. 
-  
+  Refer to the commands below to prepare the training data.
+
   1. Install dependencies
-  
+
       We offer an efficient data management library, named IndexKits, supporting the management of reading hundreds of millions of data during training, see more in [docs](./IndexKits/README.md).
       ```shell
       # 1 Install dependencies
       cd HunyuanDiT
       pip install -e ./IndexKits
      ```
-  2. Data download 
-  
+  2. Data download
+
      Feel free to download the [data demo](https://dit.hunyuan.tencent.com/download/HunyuanDiT/data_demo.zip).
      ```shell
      # 2 Data download
@@ -311,48 +311,48 @@ All models will be automatically downloaded. For more information about the mode
      unzip ./dataset/data_demo.zip -d ./dataset
      mkdir ./dataset/porcelain/arrows ./dataset/porcelain/jsons
      ```
-  3. Data conversion 
-  
+  3. Data conversion
+
      Create a CSV file for training data with the fields listed in the table below.
-    
+
      |    Fields       | Required  |  Description     |   Example   |
      |:---------------:| :------:  |:----------------:|:-----------:|
-     |   `image_path`  | Required  |  image path               |     `./dataset/porcelain/images/0.png`        | 
-     |   `text_zh`     | Required  |    text               |  青花瓷风格，一只蓝色的鸟儿站在蓝色的花瓶上，周围点缀着白色花朵，背景是白色 | 
-     |   `md5`         | Optional  |    image md5 (Message Digest Algorithm 5)  |    `d41d8cd98f00b204e9800998ecf8427e`         | 
-     |   `width`       | Optional  |    image width    |     `1024 `       | 
-     |   `height`      | Optional  |    image height   |    ` 1024 `       | 
-     
+     |   `image_path`  | Required  |  image path               |     `./dataset/porcelain/images/0.png`        |
+     |   `text_zh`     | Required  |    text               |  青花瓷风格，一只蓝色的鸟儿站在蓝色的花瓶上，周围点缀着白色花朵，背景是白色 |
+     |   `md5`         | Optional  |    image md5 (Message Digest Algorithm 5)  |    `d41d8cd98f00b204e9800998ecf8427e`         |
+     |   `width`       | Optional  |    image width    |     `1024 `       |
+     |   `height`      | Optional  |    image height   |    ` 1024 `       |
+
      > ⚠️ Optional fields like MD5, width, and height can be omitted. If omitted, the script below will automatically calculate them. This process can be time-consuming when dealing with large-scale training data.
-  
+
      We utilize [Arrow](https://github.com/apache/arrow) for training data format, offering a standard and efficient in-memory data representation. A conversion script is provided to transform CSV files into Arrow format.
-     ```shell  
-     # 3 Data conversion 
+     ```shell
+     # 3 Data conversion
      python ./hydit/data_loader/csv2arrow.py ./dataset/porcelain/csvfile/image_text.csv ./dataset/porcelain/arrows
      ```
-  
-  4. Data Selection and Configuration File Creation 
-     
+
+  4. Data Selection and Configuration File Creation
+
       We configure the training data through YAML files. In these files, you can set up standard data processing strategies for filtering, copying, deduplicating, and more regarding the training data. For more details, see [docs](IndexKits/docs/MakeDataset.md).
-  
+
       For a sample file, please refer to [file](./dataset/yamls/porcelain.yaml). For a full parameter configuration file, see [file](./IndexKits/docs/MakeDataset.md).
-  
-     
+
+
   5. Create training data index file using YAML file.
-    
+
      ```shell
       # Single Resolution Data Preparation
       idk base -c dataset/yamls/porcelain.yaml -t dataset/porcelain/jsons/porcelain.json
-   
-      # Multi Resolution Data Preparation     
+
+      # Multi Resolution Data Preparation
       idk multireso -c dataset/yamls/porcelain_mt.yaml -t dataset/porcelain/jsons/porcelain_mt.json
       ```
-   
+
   The directory structure for `porcelain` dataset is:
 
   ```shell
    cd ./dataset
-  
+
    porcelain
       ├──images/  (image files)
       │  ├──0.png
@@ -370,20 +370,20 @@ All models will be automatically downloaded. For more information about the mode
    ```
 
 ### Full-parameter Training
- 
+
   To leverage DeepSpeed in training, you have the flexibility to control **single-node** / **multi-node** training by adjusting parameters such as `--hostfile` and `--master_addr`. For more details, see [link](https://www.deepspeed.ai/getting-started/#resource-configuration-multi-node).
 
   ```shell
   # Single Resolution Training
   PYTHONPATH=./ sh hydit/train.sh --index-file dataset/porcelain/jsons/porcelain.json
-  
+
   # Multi Resolution Training
-  PYTHONPATH=./ sh hydit/train.sh --index-file dataset/porcelain/jsons/porcelain.json --multireso --reso-step 64
+  PYTHONPATH=./ sh hydit/train.sh --index-file dataset/porcelain/jsons/porcelain_mt.json --multireso --reso-step 64
   ```
 
 ### LoRA
 
-We provide training and inference scripts for LoRA, detailed in the [guidances](./lora/README.md). 
+We provide training and inference scripts for LoRA, detailed in the [guidances](./lora/README.md).
 
   ```shell
   # Training for porcelain LoRA.
@@ -397,11 +397,11 @@ We provide training and inference scripts for LoRA, detailed in the [guidances](
   cd HunyuanDiT
   # Use the huggingface-cli tool to download the model.
   huggingface-cli download Tencent-Hunyuan/HYDiT-LoRA --local-dir ./ckpts/t2i/lora
-  
+
   # Quick start
   python sample_t2i.py --prompt "青花瓷风格，一只猫在追蝴蝶"  --no-enhance --load-key ema --lora_ckpt ./ckpts/t2i/lora/porcelain
   ```
- 
+
 ## 🔑 Inference
 
 ### Using Gradio
@@ -416,13 +416,13 @@ python app/hydit_app.py
 python app/hydit_app.py --infer-mode fa
 
 # You can disable the enhancement model if the GPU memory is insufficient.
-# The enhancement will be unavailable until you restart the app without the `--no-enhance` flag. 
+# The enhancement will be unavailable until you restart the app without the `--no-enhance` flag.
 python app/hydit_app.py --no-enhance
 
 # Start with English UI
 python app/hydit_app.py --lang en
 
-# Start a multi-turn T2I generation UI. 
+# Start a multi-turn T2I generation UI.
 # If your GPU memory is less than 32GB, use '--load-4bit' to enable 4-bit quantization, which requires at least 22GB of memory.
 python app/multiTurnT2I_app.py
 ```
@@ -430,7 +430,7 @@ Then the demo can be accessed through http://0.0.0.0:443. It should be noted tha
 
 ### Using 🤗 Diffusers
 
-Please install PyTorch version 2.0 or higher in advance to satisfy the requirements of the specified version of the diffusers library.  
+Please install PyTorch version 2.0 or higher in advance to satisfy the requirements of the specified version of the diffusers library.
 
 Install 🤗 diffusers, ensuring that the version is at least 0.28.1:
 
@@ -473,7 +473,7 @@ More details can be found in [HunyuanDiT-Diffusers-Distilled](https://huggingfac
 
 ### Using Command Line
 
-We provide several commands to quick start: 
+We provide several commands to quick start:
 
 ```shell
 # Prompt Enhancement + Text-to-Image. Torch mode
@@ -515,7 +515,7 @@ We list some more useful configurations for easy usage:
 
 ### Using ComfyUI
 
-We provide several commands to quick start: 
+We provide several commands to quick start:
 
 ```shell
 # Download comfyui code
@@ -567,7 +567,7 @@ If you find [Hunyuan-DiT](https://arxiv.org/abs/2405.08748) or [DialogGen](https
 
 ```BibTeX
 @misc{li2024hunyuandit,
-      title={Hunyuan-DiT: A Powerful Multi-Resolution Diffusion Transformer with Fine-Grained Chinese Understanding}, 
+      title={Hunyuan-DiT: A Powerful Multi-Resolution Diffusion Transformer with Fine-Grained Chinese Understanding},
       author={Zhimin Li and Jianwei Zhang and Qin Lin and Jiangfeng Xiong and Yanxin Long and Xinchi Deng and Yingfang Zhang and Xingchao Liu and Minbin Huang and Zedong Xiao and Dayou Chen and Jiajun He and Jiahao Li and Wenyue Li and Chen Zhang and Rongwei Quan and Jianxiang Lu and Jiabin Huang and Xiaoyan Yuan and Xiaoxiao Zheng and Yixuan Li and Jihong Zhang and Chao Zhang and Meng Chen and Jie Liu and Zheng Fang and Weiyan Wang and Jinbao Xue and Yangyu Tao and Jianchen Zhu and Kai Liu and Sihuan Lin and Yifu Sun and Yun Li and Dongdong Wang and Mingtao Chen and Zhichao Hu and Xiao Xiao and Yan Chen and Yuhong Liu and Wei Liu and Di Wang and Yong Yang and Jie Jiang and Qinglin Lu},
       year={2024},
       eprint={2405.08748},
